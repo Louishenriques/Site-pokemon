@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jogo da Memória de Pokémon</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #171717, #292929);
+    color: white;
+}
+
+header {
+    background: #e33535;
+    padding: 18px 25px;
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    box-shadow: 0 4px 15px rgba(0,0,0,.4);
+}
+
+header h1 {
+    margin: 0 0 15px;
+    text-align: center;
+    font-size: 30px;
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+nav button {
+    margin: 0;
+    padding: 10px 18px;
+    background: white;
+    color: #222;
+    font-weight: bold;
+    border-radius: 8px;
+}
+
+nav button:hover {
+    background: #ffd83d;
+}
+
+.secao {
+    display: none;
+    min-height: calc(100vh - 120px);
+    padding: 40px 20px 70px;
+}
+
+.secao.ativa {
+    display: block;
+}
+
+.conteudo {
+    width: 1000px;
+    max-width: 95%;
+    margin: auto;
+}
+
+.titulo {
+    text-align: center;
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.subtitulo {
+    text-align: center;
+    color: #ccc;
+    margin-bottom: 35px;
+}
+
+#informacoes {
+    margin: 20px;
+    font-size: 20px;
+    text-align: center;
+}
+
+#tabuleiro {
+    width: 700px;
+    max-width: 95%;
+    margin: auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.carta {
+    height: 170px;
+    perspective: 1000px;
+    cursor: pointer;
+}
+
+.carta-interna {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform .5s;
+}
+
+.carta.virada .carta-interna {
+    transform: rotateY(180deg);
+}
+
+.frente,
+.verso {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.verso {
+    background: #e33535;
+    border: 5px solid white;
+    font-size: 45px;
+}
+
+.frente {
+    background: white;
+    color: #222;
+    transform: rotateY(180deg);
+    flex-direction: column;
+    border: 5px solid #333;
+}
+
+.frente img {
+    width: 110px;
+    height: 110px;
+    object-fit: contain;
+}
+
+.nome {
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+.completa .frente {
+    border: 5px solid #36c95f;
+}
+
+button {
+    padding: 12px 25px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #3b82f6;
+    color: white;
+}
+
+button:hover {
+    background: #2563eb;
+}
+
+.botao-comecar {
+    display: block;
+    margin: 30px auto;
+    font-size: 22px;
+    padding: 15px 35px;
+}
+
+#telaDerrota,
+#telaVitoria {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,.95);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+#telaDerrota h2,
+#telaVitoria h2 {
+    font-size: 50px;
+    margin-bottom: 10px;
+}
+
+#telaDerrota p,
+#telaVitoria p {
+    font-size: 22px;
+}
+
+#telaDerrota button,
+#telaVitoria button {
+    margin-top: 20px;
+}
+
+.regras {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.regra {
+    background: #333;
+    padding: 25px;
+    border-radius: 15px;
+    border-left: 6px solid #e33535;
+}
+
+.regra h3 {
+    margin-top: 0;
+    color: #ffd83d;
+}
+
+.regra p {
+    color: #ddd;
+    line-height: 1.6;
+}
+
+.pokedex-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.pokemon-card {
+    background: white;
+    color: #222;
+    border-radius: 15px;
+    padding: 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: .25s;
+}
+
+.pokemon-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,.4);
+}
+
+.pokemon-card img {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+}
+
+.pokemon-card h3 {
+    margin: 5px 0;
+    text-transform: capitalize;
+}
+
+.numero {
+    color: #777;
+    font-weight: bold;
+}
+
+.tipo {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: #ddd;
+    margin: 3px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+#pokemonDetalhes {
+    display: none;
+    background: white;
+    color: #222;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+#pokemonDetalhes img {
+    width: 230px;
+    height: 230px;
+    object-fit: contain;
+}
+
+.detalhes-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.detalhe {
+    background: #eee;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.detalhe strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.evolucoes {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 25px;
+}
+
+.evolucao {
+    text-align: center;
+}
+
+.evolucao img {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+}
+
+.seta {
+    font-size: 30px;
+}
+
+.carregando {
+    text-align: center;
+    font-size: 20px;
+    color: #ffd83d;
+    margin: 30px;
+}
+
+.erro {
+    text-align: center;
+    color: #ff6666;
+    font-size: 20px;
+    margin: 30px;
+}
+
+.curiosidades {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.curiosidade {
+    background: #333;
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: .25s;
+}
+
+.curiosidade:hover {
+    transform: translateY(-5px);
+}
+
+.curiosidade img {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.curiosidade h2 {
+    color: #ffd83d;
+    margin-top: 0;
+}
+
+.curiosidade p {
+    color: #ddd;
+    line-height: 1.7;
+    margin-bottom: 0;
+}
+
+.rodape {
+    text-align: center;
+    background: #111;
+    padding: 25px;
+    color: #aaa;
+}
+
+@media(max-width:800px) {
+    #tabuleiro {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .pokedex-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .regras,
+    .curiosidades {
+        grid-template-columns: 1fr;
+    }
+
+    .detalhes-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media(max-width:600px) {
+    header h1 {
+        font-size: 23px;
+    }
+
+    nav button {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+
+    .titulo {
+        font-size: 30px;
+    }
+
+    #tabuleiro {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .carta {
+        height: 130px;
+    }
+
+    .frente img {
+        width: 80px;
+        height: 80px;
+    }
+
+    .nome {
+        font-size: 13px;
+    }
+
+    .pokedex-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detalhes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .curiosidade {
+        align-items: flex-start;
+    }
+
+    .curiosidade img {
+        width: 70px;
+        height: 70px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<audio id="musicaJogo" loop preload="auto">
+    <source src="musca.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="somReiniciar" preload="auto">
+    <source src="Pokemon Healing - Sound Effect (HD).mp3" type="audio/mpeg">
+</audio>
+
+<audio id="somVitoria" preload="auto">
+    <source src="Obtained a Badge - Pokémon Ruby_Sapphire_Emerald Soundtrack.mp3" type="audio/mpeg">
+</audio>
+
+<header>
+    <h1>⚡ Jogo da Memória de Pokémon ⚡</h1>
+
+    <nav>
+        <button onclick="mostrarSecao('jogo')">🎮 Jogo</button>
+        <button onclick="mostrarSecao('regras')">📖 Regras</button>
+        <button onclick="mostrarSecao('pokedex')">📕 Pokédex</button>
+        <button onclick="mostrarSecao('curiosidades')">⭐ Curiosidades</button>
+    </nav>
+</header>
+
+<section id="jogo" class="secao ativa">
+    <div class="conteudo">
+
+        <h2 class="titulo">🎮 Jogo da Memória</h2>
+
+        <p class="subtitulo">
+            Encontre as três cartas da mesma linha evolutiva!
+        </p>
+
+        <button id="botaoComecar" class="botao-comecar" onclick="comecarJogo()">
+            ▶️ Começar jogo
+        </button>
+
+        <div id="areaJogo" style="display:none;">
+
+            <div id="informacoes">
+                Conjuntos completos:
+                <span id="contador">0</span> / 4
+
+                &nbsp;&nbsp;&nbsp;
+
+                Tentativas:
+                <span id="tentativas">4</span> / 4
+
+                <br><br>
+            </div>
+
+            <div id="tabuleiro"></div>
+
+        </div>
+
+    </div>
+</section>
+
+<section id="regras" class="secao">
+    <div class="conteudo">
+
+        <h2 class="titulo">📖 Regras do jogo</h2>
+
+        <p class="subtitulo">
+            Descubra como jogar o Pokémon Memory Game.
+        </p>
+
+        <div class="regras">
+
+            <div class="regra">
+                <h3>1️⃣ Escolha as cartas</h3>
+                <p>Clique em três cartas do jogo da memória para revelá-las.</p>
+            </div>
+
+            <div class="regra">
+                <h3>2️⃣ Encontre uma evolução</h3>
+                <p>As três cartas escolhidas precisam pertencer à mesma linha evolutiva.</p>
+            </div>
+
+            <div class="regra">
+                <h3>3️⃣ Acertou?</h3>
+                <p>Se as três cartas forem da mesma linha evolutiva, o conjunto ficará marcado em verde.</p>
+            </div>
+
+            <div class="regra">
+                <h3>4️⃣ Errou?</h3>
+                <p>Se as cartas forem de grupos diferentes, você perde uma tentativa e as cartas serão fechadas novamente.</p>
+            </div>
+
+            <div class="regra">
+                <h3>5️⃣ Recuperação</h3>
+                <p>Quando você completa uma linha evolutiva, suas tentativas voltam para 4.</p>
+            </div>
+
+            <div class="regra">
+                <h3>6️⃣ Vitória</h3>
+                <p>Complete as quatro linhas evolutivas para vencer o jogo.</p>
+            </div>
+
+            <div class="regra">
+                <h3>7️⃣ Derrota</h3>
+                <p>Se suas tentativas chegarem a zero, você perde.</p>
+            </div>
+
+            <div class="regra">
+                <h3>🏆 Objetivo</h3>
+                <p>Complete Rowlet, Dratini, Squirtle e Ralts e consiga a vitória!</p>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<section id="pokedex" class="secao">
+    <div class="conteudo">
+
+        <h2 class="titulo">📕 Pokédex</h2>
+
+        <p class="subtitulo">
+            Conheça os 12 Pokémon presentes no jogo.
+        </p>
+
+        <div id="pokemonDetalhes"></div>
+
+        <div id="pokedexGrid" class="pokedex-grid"></div>
+
+    </div>
+</section>
+
+<section id="curiosidades" class="secao">
+    <div class="conteudo">
+
+        <h2 class="titulo">⭐ Curiosidades</h2>
+
+        <p class="subtitulo">
+            Algumas curiosidades sobre os Pokémon presentes no jogo.
+        </p>
+
+        <div class="curiosidades">
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/722.png" alt="Rowlet">
+                <div>
+                    <h2>Rowlet</h2>
+                    <p>Dupla tipagem inicial: Desde Bulbasaur, nenhum outro inicial havia recebido dois tipos logo no primeiro estágio evolutivo, característica que Rowlet resgatou com Grass/Flying.</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/723.png" alt="Dartrix">
+                <div>
+                    <h2>Dartrix</h2>
+                    <p>Personalidade vaidosa: Ele é extremamente limpo e preocupado com a aparência. Se a sua plumagem estiver suja ou desarrumada, ele pode ficar estressado e até ignorar as ordens do seu treinador até que seja devidamente penteado.</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/724.png" alt="Decidueye">
+                <div>
+                    <h2>Decidueye</h2>
+                    <p>Significado do nome: A palavra Decidueye vem da união de deciduous (árvores decíduas, que perdem as folhas) e bullseye (o alvo perfeito no tiro com arco). Em japonês, Junaiper junta árvore e sniper (atirador de elite).</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/147.png" alt="Dratini">
+                <div>
+                    <h2>Dratini</h2>
+                    <p>Altura surpreendente: Dratini mede 1,80 metro de comprimento, sendo mais alto que o próprio Charizard (que tem 1,70 m). Isso acontece porque Pokémon em formato de serpente são medidos da cabeça até a ponta da cauda.</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/148.png" alt="Dragonair">
+                <div>
+                    <h2>Dragonair</h2>
+                    <p>Nome original: Antes de se chamar Dragonair, o Pokémon era conhecido pelo nome provisório de 'Dragyn' durante o desenvolvimento inicial.</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/149.png" alt="Dragonite">
+                <div>
+                    <h2>Dragonite</h2>
+                    <p>Mudança drástica de cor e visual: Enquanto Dratini e Dragonair são criaturas azuis e serpentinas, o Dragonite evolui para uma forma laranja, bípede, com braços, pernas e asas, o que gerou teorias populares de que sua linha evolutiva teria sido trocada com a do Gyarados.</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png" alt="Squirtle">
+                <div>
+                    <h2>Squirtle</h2>
+                    <p>Lenda japonesa: A cauda peluda e a evolução de Squirtle foram inspiradas no Minogami, uma tartaruga mítica do folclore japonês que vive 10.000 anos e acumula algas marinhas no casco.</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/8.png" alt="Wartortle">
+                <div>
+                    <h2>Wartortle</h2>
+                    <p>Símbolo de vida longa: De acordo com a Pokédex, a cauda de Wartortle escurece com a idade e é considerada um símbolo de vida longa, tornando o Pokémon muito popular entre os idosos no mundo Pokémon.</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png" alt="Blastoise">
+                <div>
+                    <h2>Blastoise</h2>
+                    <p>Mudança no design: Originalmente, o Blastoise não pertencia à mesma linha evolutiva de Squirtle e Wartortle durante o desenvolvimento inicial de Pokémon Red & Green. Ele era de uma família separada e o Wartortle teria outra evolução final. Devido ao limite de memória do Game Boy, a Game Freak descartou o design original e colocou o Blastoise como o estágio final.</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/280.png" alt="Ralts">
+                <div>
+                    <h2>Ralts</h2>
+                    <p>Senso de emoções: Seus chifres vermelhos servem para captar emoções, especialmente as negativas como o medo ou a raiva, fazendo com que ele se esconda de hostilidades.</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/281.png" alt="Kirlia">
+                <div>
+                    <h2>Kirlia</h2>
+                    <p>Poderes psíquicos e o futuro: Ele usa seus poderes psíquicos para distorcer o espaço ao seu redor, o que permite criar miragens e até ver o futuro.</p>
+                </div>
+            </div>
+
+            <div class="curiosidade">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/282.png" alt="Gardevoir">
+                <div>
+                    <h2>Gardevoir</h2>
+                    <p>Poder de criar buracos negros: De acordo com as entradas da Pokédex, Gardevoir tem o poder de distorcer dimensões e criar um pequeno buraco negro para proteger seu Treinador.</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<div id="telaDerrota">
+    <h2>Você perdeu! 😭</h2>
+    <p>Acabaram suas tentativas.</p>
+    <button onclick="reiniciarDepoisDaDerrota()">Reiniciar 🔄️</button>
+</div>
+
+<div id="telaVitoria">
+    <h2>Você venceu! 🎉</h2>
+    <p>Você completou todas as linhas evolutivas! 🏆</p>
+    <button onclick="iniciarJogo()">Jogar novamente 🔄️</button>
+</div>
+
+<footer class="rodape">
+    Feito pelo aluno: Luís Henrique Pereira Tomé
+</footer>
+
+<script>
+const pokemon = [
+    { nome: "Rowlet 🍃🪽", id: 722, grupo: 1 },
+    { nome: "Dartrix 🍃🪽", id: 723, grupo: 1 },
+    { nome: "Decidueye 🍃👻", id: 724, grupo: 1 },
+    { nome: "Dratini 🐉", id: 147, grupo: 2 },
+    { nome: "Dragonair 🐉", id: 148, grupo: 2 },
+    { nome: "Dragonite 🐉🪽", id: 149, grupo: 2 },
+    {
+        nome: "Squirtle 💧",
+        id: 7,
+        grupo: 3,
+        imagem: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png"
+    },
+    { nome: "Wartortle 💧", id: 8, grupo: 3 },
+    { nome: "Blastoise 💧", id: 9, grupo: 3 },
+    { nome: "Ralts 🧠🧚", id: 280, grupo: 4 },
+    { nome: "Kirlia 🧠🧚", id: 281, grupo: 4 },
+    { nome: "Gardevoir 🧠🧚", id: 282, grupo: 4 }
+];
+
+const pokemonJogo = [
+    722, 723, 724,
+    147, 148, 149,
+    7, 8, 9,
+    280, 281, 282
+];
+
+let cartasViradas = [];
+let gruposCompletos = [];
+let bloqueado = false;
+let jogoComecou = false;
+let tentativas = 4;
+
+const MAX_TENTATIVAS = 4;
+
+const musicaJogo = document.getElementById("musicaJogo");
+const somReiniciar = document.getElementById("somReiniciar");
+const somVitoria = document.getElementById("somVitoria");
+
+musicaJogo.volume = 0.20;
+somReiniciar.volume = 1;
+somVitoria.volume = 0.25;
+
+function pararMusica() {
+    musicaJogo.pause();
+}
+
+function pararSonsEspeciais() {
+    somReiniciar.onended = null;
+    somVitoria.onended = null;
+
+    somReiniciar.pause();
+    somVitoria.pause();
+
+    somReiniciar.currentTime = 0;
+    somVitoria.currentTime = 0;
+}
+
+function tocarMusica() {
+    if (!jogoComecou || !musicaJogo.paused) return;
+    musicaJogo.play().catch(() => {});
+}
+
+function tocarSomReiniciar() {
+    pararMusica();
+
+    somVitoria.onended = null;
+    somVitoria.pause();
+    somVitoria.currentTime = 0;
+
+    somReiniciar.onended = null;
+    somReiniciar.currentTime = 0;
+
+    somReiniciar.onended = function() {
+        somReiniciar.onended = null;
+        iniciarJogo();
+    };
+
+    somReiniciar.play().catch(() => {
+        iniciarJogo();
+    });
+}
+
+function tocarSomVitoria() {
+    pararMusica();
+
+    somReiniciar.onended = null;
+    somReiniciar.pause();
+    somReiniciar.currentTime = 0;
+
+    somVitoria.onended = null;
+    somVitoria.currentTime = 0;
+
+    somVitoria.onended = function() {
+        somVitoria.onended = null;
+        tocarMusica();
+    };
+
+    somVitoria.play().catch(() => {});
+}
+
+function comecarJogo() {
+    jogoComecou = true;
+
+    document.getElementById("botaoComecar").style.display = "none";
+    document.getElementById("areaJogo").style.display = "block";
+
+    iniciarJogo();
+}
+
+function reiniciarDepoisDaDerrota() {
+    tocarSomReiniciar();
+}
+
+function mostrarSecao(secao) {
+    document.querySelectorAll(".secao").forEach(elemento => {
+        elemento.classList.remove("ativa");
+    });
+
+    document.getElementById(secao).classList.add("ativa");
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    if (secao === "pokedex") {
+        carregarPokedex();
+    }
+}
+
+function iniciarJogo() {
+    jogoComecou = true;
+
+    pararSonsEspeciais();
+
+    document.getElementById("telaDerrota").style.display = "none";
+    document.getElementById("telaVitoria").style.display = "none";
+    document.getElementById("botaoComecar").style.display = "none";
+    document.getElementById("areaJogo").style.display = "block";
+
+    cartasViradas = [];
+    gruposCompletos = [];
+    bloqueado = false;
+    tentativas = MAX_TENTATIVAS;
+
+    document.getElementById("contador").textContent = "0";
+    document.getElementById("tentativas").textContent = tentativas;
+
+    const tabuleiro = document.getElementById("tabuleiro");
+    tabuleiro.innerHTML = "";
+
+    const cartas = [...pokemon];
+
+    cartas.sort(() => Math.random() - 0.5);
+
+    cartas.forEach(pokemon => criarCarta(pokemon));
+
+    tocarMusica();
+}
+
+function criarCarta(pokemon) {
+    const tabuleiro = document.getElementById("tabuleiro");
+    const carta = document.createElement("div");
+
+    carta.classList.add("carta");
+
+    const imagem =
+        pokemon.imagem ||
+        `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`;
+
+    carta.innerHTML = `
+        <div class="carta-interna">
+            <div class="verso">?</div>
+
+            <div class="frente">
+                <img src="${imagem}" alt="${pokemon.nome}">
+                <div class="nome">${pokemon.nome}</div>
+            </div>
+        </div>
+    `;
+
+    carta.addEventListener("click", () => {
+        virarCarta(carta, pokemon);
+    });
+
+    tabuleiro.appendChild(carta);
+}
+
+function virarCarta(carta, pokemon) {
+    if (!jogoComecou) return;
+    if (bloqueado) return;
+    if (carta.classList.contains("virada")) return;
+    if (carta.classList.contains("completa")) return;
+
+    carta.classList.add("virada");
+
+    cartasViradas.push({
+        elemento: carta,
+        pokemon: pokemon
+    });
+
+    if (cartasViradas.length === 3) {
+        verificarGrupo();
+    }
+}
+
+function verificarGrupo() {
+    bloqueado = true;
+
+    const grupo = cartasViradas[0].pokemon.grupo;
+
+    const todasDoMesmoGrupo = cartasViradas.every(
+        carta => carta.pokemon.grupo === grupo
+    );
+
+    if (todasDoMesmoGrupo) {
+        completarGrupo();
+    } else {
+        tentativas--;
+
+        document.getElementById("tentativas").textContent = tentativas;
+
+        setTimeout(() => {
+            fecharCartas();
+
+            if (tentativas <= 0) {
+                mostrarDerrota();
+            }
+        }, 1000);
+    }
+}
+
+function completarGrupo() {
+    gruposCompletos.push(cartasViradas[0].pokemon.grupo);
+
+    cartasViradas.forEach(carta => {
+        carta.elemento.classList.add("completa");
+    });
+
+    document.getElementById("contador").textContent =
+        gruposCompletos.length;
+
+    tentativas = MAX_TENTATIVAS;
+
+    document.getElementById("tentativas").textContent = tentativas;
+
+    cartasViradas = [];
+
+    if (gruposCompletos.length === 4) {
+        bloqueado = true;
+
+        tocarSomVitoria();
+
+        document.getElementById("telaVitoria").style.display = "flex";
+
+        return;
+    }
+
+    bloqueado = false;
+}
+
+function fecharCartas() {
+    cartasViradas.forEach(carta => {
+        carta.elemento.classList.remove("virada");
+    });
+
+    cartasViradas = [];
+    bloqueado = false;
+}
+
+function mostrarDerrota() {
+    bloqueado = true;
+    pararMusica();
+
+    document.getElementById("telaDerrota").style.display = "flex";
+}
+
+async function carregarPokedex() {
+    const grid = document.getElementById("pokedexGrid");
+
+    if (grid.dataset.carregado === "true") return;
+
+    grid.innerHTML =
+        '<div class="carregando">Carregando Pokédex...</div>';
+
+    const resultados = [];
+
+    for (const id of pokemonJogo) {
+        try {
+            const resposta = await fetch(
+                `https://pokeapi.co/api/v2/pokemon/${id}`
+            );
+
+            const dados = await resposta.json();
+            resultados.push(dados);
+        } catch {}
+    }
+
+    grid.innerHTML = "";
+
+    resultados.forEach(dados => {
+        const card = document.createElement("div");
+
+        card.className = "pokemon-card";
+
+        const tipos = dados.types
+            .map(tipo =>
+                `<span class="tipo">${traduzirTipo(tipo.type.name)}</span>`
+            )
+            .join("");
+
+        card.innerHTML = `
+            <div class="numero">
+                #${String(dados.id).padStart(3, "0")}
+            </div>
+
+            <img
+                src="${dados.sprites.other["official-artwork"].front_default}"
+                alt="${dados.name}"
+            >
+
+            <h3>${dados.name}</h3>
+
+            <div>${tipos}</div>
+        `;
+
+        card.onclick = () => mostrarDetalhes(dados.id);
+
+        grid.appendChild(card);
+    });
+
+    grid.dataset.carregado = "true";
+}
+
+async function mostrarDetalhes(id) {
+    const detalhes = document.getElementById("pokemonDetalhes");
+
+    detalhes.style.display = "block";
+    detalhes.innerHTML =
+        '<div class="carregando">Carregando informações...</div>';
+
+    try {
+        const resposta = await fetch(
+            `https://pokeapi.co/api/v2/pokemon/${id}`
+        );
+
+        const dados = await resposta.json();
+
+        const especieResposta = await fetch(dados.species.url);
+        const especie = await especieResposta.json();
+
+        let descricao = "Descrição não disponível.";
+
+        const entradaPT = especie.flavor_text_entries.find(
+            entrada => entrada.language.name === "pt"
+        );
+
+        const entradaEN = especie.flavor_text_entries.find(
+            entrada => entrada.language.name === "en"
+        );
+
+        if (entradaPT) {
+            descricao = entradaPT.flavor_text;
+        } else if (entradaEN) {
+            descricao = entradaEN.flavor_text;
+        }
+
+        descricao = descricao.replace(/\n|\f/g, " ");
+
+        const tipos = dados.types
+            .map(tipo =>
+                `<span class="tipo">${traduzirTipo(tipo.type.name)}</span>`
+            )
+            .join("");
+
+        const habilidades = dados.abilities
+            .map(habilidade => habilidade.ability.name)
+            .join(", ");
+
+        detalhes.innerHTML = `
+            <div>
+                <div class="numero">
+                    #${String(dados.id).padStart(3, "0")}
+                </div>
+
+                <h2 style="text-transform:capitalize;">
+                    ${dados.name}
+                </h2>
+
+                <img
+                    src="${dados.sprites.other["official-artwork"].front_default}"
+                    alt="${dados.name}"
+                >
+
+                <div>${tipos}</div>
+
+                <p>${descricao}</p>
+
+                <div class="detalhes-grid">
+                    <div class="detalhe">
+                        <strong>Altura</strong>
+                        ${dados.height / 10} m
+                    </div>
+
+                    <div class="detalhe">
+                        <strong>Peso</strong>
+                        ${dados.weight / 10} kg
+                    </div>
+
+                    <div class="detalhe">
+                        <strong>Experiência base</strong>
+                        ${dados.base_experience || "-"}
+                    </div>
+
+                    <div class="detalhe">
+                        <strong>Habilidades</strong>
+                        ${habilidades}
+                    </div>
+                </div>
+
+                <h3 style="margin-top:30px;">
+                    🧬 Linha evolutiva
+                </h3>
+
+                <div id="evolucoes" class="evolucoes">
+                    Carregando evoluções...
+                </div>
+            </div>
+        `;
+
+        await carregarEvolucoes(especie.evolution_chain.url);
+
+        detalhes.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+    } catch {
+        detalhes.innerHTML = `
+            <div class="erro">
+                ❌ Não foi possível carregar as informações.
+            </div>
+        `;
+    }
+}
+
+async function carregarEvolucoes(url) {
+    const elemento = document.getElementById("evolucoes");
+
+    try {
+        const resposta = await fetch(url);
+        const cadeia = await resposta.json();
+
+        const nomes = [];
+
+        function percorrer(no) {
+            nomes.push(no.species.name);
+
+            no.evolves_to.forEach(proximo => {
+                percorrer(proximo);
+            });
+        }
+
+        percorrer(cadeia.chain);
+
+        elemento.innerHTML = "";
+
+        for (let i = 0; i < nomes.length; i++) {
+            const nome = nomes[i];
+
+            try {
+                const resposta = await fetch(
+                    `https://pokeapi.co/api/v2/pokemon/${nome}`
+                );
+
+                const dados = await resposta.json();
+
+                const div = document.createElement("div");
+
+                div.className = "evolucao";
+
+                div.innerHTML = `
+                    <img
+                        src="${dados.sprites.other["official-artwork"].front_default}"
+                        alt="${nome}"
+                    >
+
+                    <div style="text-transform:capitalize;font-weight:bold;">
+                        ${nome}
+                    </div>
+                `;
+
+                elemento.appendChild(div);
+
+                if (i < nomes.length - 1) {
+                    const seta = document.createElement("div");
+
+                    seta.className = "seta";
+                    seta.textContent = "➡️";
+
+                    elemento.appendChild(seta);
+                }
+
+            } catch {}
+        }
+
+    } catch {
+        elemento.innerHTML =
+            "Não foi possível carregar a evolução.";
+    }
+}
+
+function traduzirTipo(tipo) {
+    const tipos = {
+        normal: "Normal",
+        fire: "Fogo",
+        water: "Água",
+        electric: "Elétrico",
+        grass: "Planta",
+        ice: "Gelo",
+        fighting: "Lutador",
+        poison: "Veneno",
+        ground: "Terrestre",
+        flying: "Voador",
+        psychic: "Psíquico",
+        bug: "Inseto",
+        rock: "Pedra",
+        ghost: "Fantasma",
+        dragon: "Dragão",
+        dark: "Sombrio",
+        steel: "Aço",
+        fairy: "Fada"
+    };
+
+    return tipos[tipo] || tipo;
+}
+</script>
+
+</body>
+</html>
